@@ -1,4 +1,4 @@
-package com.microsoft.graph;
+package com.microsoft.graph.authentication;
 
 import android.app.Activity;
 import android.app.Application;
@@ -10,7 +10,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
 
-import com.microsoft.graph.httpcore.IAuthenticationProvider;
 import com.microsoft.identity.client.AuthenticationCallback;
 import com.microsoft.identity.client.AuthenticationResult;
 import com.microsoft.identity.client.IAccount;
@@ -20,7 +19,7 @@ import com.microsoft.identity.client.exception.MsalException;
 import com.microsoft.identity.client.exception.MsalServiceException;
 import com.microsoft.identity.client.exception.MsalUiRequiredException;
 
-import org.apache.http.HttpRequest;
+import com.microsoft.graph.http.IHttpRequest;
 
 import java.util.List;
 
@@ -30,7 +29,7 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
     private PublicClientApplication publicClientApplication;
     private String scopes[];
     private Application application;
-    private HttpRequest httpRequest;
+    private IHttpRequest httpRequest;
     private Callback callbacks;
 
     /**
@@ -52,7 +51,7 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
     }
 
     @Override
-    public void authenticateRequest(HttpRequest httpRequest) {
+    public void authenticateRequest(IHttpRequest httpRequest) {
         Log.d(TAG, "authenticating request");
 
         List<IAccount> accounts = publicClientApplication.getAccounts();

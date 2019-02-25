@@ -1,4 +1,4 @@
-package com.microsoft.graph;
+package com.microsoft.graph.authentication;
 
 import android.app.Activity;
 import android.app.Application;
