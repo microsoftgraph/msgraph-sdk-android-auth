@@ -143,7 +143,7 @@ AndroidManifest.xml
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:host="auth" android:scheme="msal508f0c8e-0b04-45f5-8514-69a5570026c4"/>
+                <data android:host="auth" android:scheme="msal<YOUR_CLIENT_ID>"/>
             </intent-filter>
         </activity>
 
