@@ -113,135 +113,7 @@ graphClient
   });
 ```
 
-### 4 Sample
-
-AndroidManifest.xml
-```
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="your.domain.name">
-
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <activity android:name="com.microsoft.identity.client.BrowserTabActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:host="auth" android:scheme="msal<YOUR_CLIENT_ID>"/>
-            </intent-filter>
-        </activity>
-
-    </application>
-</manifest>
-```
-
-MainActivity.java
-```
-package com.your.packagename;
-
-import android.content.Intent;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.os.StrictMode;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-
-import com.microsoft.graph.authentication.MSALAuthenticationProvider;
-import com.microsoft.graph.concurrency.ICallback;
-import com.microsoft.graph.core.ClientException;
-import com.microsoft.graph.models.extensions.IGraphServiceClient;
-import com.microsoft.graph.models.extensions.User;
-import com.microsoft.graph.requests.extensions.GraphServiceClient;
-import com.microsoft.identity.client.AuthenticationCallback;
-import com.microsoft.identity.client.AuthenticationResult;
-import com.microsoft.identity.client.PublicClientApplication;
-import com.microsoft.identity.client.exception.MsalClientException;
-import com.microsoft.identity.client.exception.MsalException;
-import com.microsoft.identity.client.exception.MsalServiceException;
-
-public class MainActivity extends AppCompatActivity {
-    class LongOperation extends AsyncTask<String,Void,String> {
-        @Override
-        protected String doInBackground(String... strings) {
-
-            //Make a graph call
-            return graphClient.me().buildRequest().get().displayName;
-
-        }
-        @Override
-        protected void onPostExecute(String result) {
-            TextView txt = (TextView) findViewById(R.id.viewid);
-            txt.setText(result);
-        }
-
-        @Override
-        protected void onPreExecute() {}
-
-        @Override
-        protected void onProgressUpdate(Void... values) {}
-    };
-    IGraphServiceClient graphClient;
-    String SCOPES[] = {"https://graph.microsoft.com/User.Read"};
-    PublicClientApplication publicClientApplication;
-    MSALAuthenticationProvider msalAuthenticationProvider;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-    publicClientApplication = new PublicClientApplication(this.getApplicationContext(), "YOUR CLIENT ID HERE");
-    msalAuthenticationProvider = new MSALAuthenticationProvider(this,
-                getApplication(),
-                publicClientApplication,
-                SCOPES);
-
-    graphClient =
-              GraphServiceClient
-                      .builder()
-                      .authenticationProvider(msalAuthenticationProvider)
-                      .buildClient();
-
-
-    Button button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener(){
-            public void onClick(View v) {
-                LongOperation longOperation = new LongOperation();
-                longOperation.execute("");
-            }
-        });
-    }
-
-    //Create onActivityResult in MainActivity and call the below function
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        msalAuthenticationProvider.handleInteractiveRequestRedirect(requestCode, resultCode, data);
-    }
-}
-```
-
-## 5. Documentation
+## 4. Documentation
 
 For more detailed documentation, see:
 
@@ -253,11 +125,11 @@ For more detailed documentation, see:
 * [Known issues](https://github.com/microsoftgraph/msgraph-sdk-java/wiki/Known-Issues)
 * [Contributions](https://github.com/microsoftgraph/msgraph-sdk-java/blob/master/CONTRIBUTING.md)
 
-## 6. Issues
+## 5. Issues
 
 For known issues, see [issues](https://github.com/microsoftgraph/msgraph-sdk-android-auth/issues).
 
-## 7. Contributions
+## 6. Contributions
 
 The Microsoft Graph SDK is open for contribution. To contribute to this project, see [Contributing](https://github.com/microsoftgraph/msgraph-sdk-java/blob/master/CONTRIBUTING.md).
 
@@ -271,13 +143,13 @@ Thanks to everyone who has already devoted time to improving the library:
 
 This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind are welcome!
 
-## 8. Supported Java versions
+## 7. Supported Java versions
 The Microsoft Graph SDK for Java library is supported at runtime for Java 7+ and [Android API revision 21](http://source.android.com/source/build-numbers.html) and greater.
 
-## 9. License
+## 8. License
 
 Copyright (c) Microsoft Corporation. All Rights Reserved. Licensed under the [MIT license](LICENSE).
 
-## 10. Third-party notices
+## 9. Third-party notices
 
 [Third-party notices](THIRD%20PARTY%20NOTICES)
