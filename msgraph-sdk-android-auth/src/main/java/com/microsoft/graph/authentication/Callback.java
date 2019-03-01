@@ -37,23 +37,15 @@ public class Callback implements Application.ActivityLifecycleCallbacks {
     }
 
     @Override
-    public void onActivityPaused(Activity activity) {
-        setCurrentActivity(activity);
-    }
+    public void onActivityPaused(Activity activity) {}
 
     @Override
-    public void onActivityStopped(Activity activity) {
-        setCurrentActivity(activity);
-    }
+    public void onActivityStopped(Activity activity) {}
 
     @Override
-    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-        setCurrentActivity(activity);
-    }
+    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
 
     @Override
-    public void onActivityDestroyed(Activity activity) {
-        setCurrentActivity(activity);
-    }
+    public void onActivityDestroyed(Activity activity) {}
 }
 

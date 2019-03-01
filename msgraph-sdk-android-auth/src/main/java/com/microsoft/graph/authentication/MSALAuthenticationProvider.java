@@ -46,97 +46,118 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
         application.registerActivityLifecycleCallbacks(callbacks);
     }
 
+    private class AuthorizationData{
+        private AuthenticationResult authenticationResult;
+        private CountDownLatch latch;
+        public AuthorizationData(CountDownLatch latch){
+            this.latch = latch;
+        }
+        public AuthenticationResult getAuthenticationResult(){
+            return authenticationResult;
+        }
+        public void setAuthenticationResult(AuthenticationResult authenticationResult){
+            this.authenticationResult = authenticationResult;
+        }
+        public CountDownLatch getLatch(){
+            return latch;
+        }
+    }
+
     @Override
     public void authenticateRequest(IHttpRequest httpRequest) {
         Log.d(TAG, "Authenticating request");
-        CountDownLatch latch = new CountDownLatch(1);
-
-        List<IAccount> accounts = publicClientApplication.getAccounts();
-        if (accounts != null && accounts.size() > 0) {
-            IAccount firstAccount = accounts.get(0);
-            GetAccessTokenSilentAsync(httpRequest, firstAccount, latch);
-        } else {
-            GetAccessTokenInteractiveAsync(httpRequest, latch);
-        }
-
+        AuthorizationData authorizationData = new AuthorizationData(new CountDownLatch(1));
+        startAuthentication(authorizationData);
         try {
-            latch.await();
+            authorizationData.getLatch().await();
         }catch (InterruptedException e){
             e.printStackTrace();
         }
+        httpRequest.addHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + authorizationData.getAuthenticationResult().getAccessToken());
     }
 
-    private void GetAccessTokenSilentAsync(IHttpRequest httpRequest, IAccount firstAccount, CountDownLatch latch){
-        Log.d(TAG, "Trying to acquir token silently");
-        publicClientApplication.acquireTokenSilentAsync(scopes, firstAccount, getAuthSilentCallback(httpRequest, latch));
+    private void startAuthentication(AuthorizationData authorizationData){
+        List<IAccount> accounts = publicClientApplication.getAccounts();
+        if (accounts != null && accounts.size() > 0) {
+            IAccount firstAccount = accounts.get(0);
+            GetAccessTokenSilentAsync(authorizationData, firstAccount);
+        } else {
+            GetAccessTokenInteractiveAsync(authorizationData);
+        }
     }
 
-    private void GetAccessTokenInteractiveAsync(IHttpRequest httpRequest, CountDownLatch latch){
+    private void GetAccessTokenSilentAsync(AuthorizationData authorizationData, IAccount firstAccount){
+        Log.d(TAG, "Trying to acquire token silently");
+        publicClientApplication.acquireTokenSilentAsync(scopes, firstAccount, getAuthSilentCallback(authorizationData));
+    }
+
+    private void GetAccessTokenInteractiveAsync(AuthorizationData authorizationData){
         Log.d(TAG, "Acquiring token interactively");
-        publicClientApplication.acquireToken(getCurrentActivity(), scopes, getAuthInteractiveCallback(httpRequest, latch));
+        publicClientApplication.acquireToken(getCurrentActivity(), scopes, getAuthInteractiveCallback(authorizationData));
     }
 
     private Activity getCurrentActivity() {
-        Log.d(TAG, "Get current activity");
+        Log.d(TAG, "Get current activity : " + this.callbacks.getActivity().getLocalClassName());
         return this.callbacks.getActivity();
     }
 
-    private AuthenticationCallback getAuthSilentCallback(final IHttpRequest httpRequest, final CountDownLatch latch) {
+    private AuthenticationCallback getAuthSilentCallback(final AuthorizationData authorizationData) {
         return new AuthenticationCallback() {
             @Override
             public void onSuccess(AuthenticationResult authenticationResult) {
                 Log.d(TAG, "Silent authentication successful");
-                httpRequest.addHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + authenticationResult.getAccessToken());
-                latch.countDown();
+                authorizationData.setAuthenticationResult(authenticationResult);
+                authorizationData.getLatch().countDown();
             }
 
             @Override
             public void onError(MsalException e) {
-                if (e instanceof MsalClientException) {
-                    Log.d(TAG, "Exception inside MSAL" + e.getMessage());
+                if(e instanceof MsalUiRequiredException) {
+                    GetAccessTokenInteractiveAsync(authorizationData);
+                } else {
+                    if (e instanceof MsalClientException) {
+                        Log.d(TAG, "Exception inside MSAL" + e.getMessage());
+                    } else if (e instanceof MsalServiceException) {
+                        Log.d(TAG, "Exception when communicating with the STS, likely config issue " + e.getMessage());
+                    }
                     e.printStackTrace();
-                } else if (e instanceof MsalServiceException) {
-                    Log.d(TAG, "Exception when communicating with the STS, likely config issue " + e.getMessage());
-                    e.printStackTrace();
-                } else if (e instanceof MsalUiRequiredException) {
-                    getAuthInteractiveCallback(httpRequest, latch);
+                    authorizationData.getLatch().countDown();
                 }
-                latch.countDown();
             }
 
             @Override
             public void onCancel() {
                 Log.d(TAG, "User pressed cancel");
-                latch.countDown();
+                authorizationData.getLatch().countDown();
             }
         };
     }
 
-    private AuthenticationCallback getAuthInteractiveCallback(final IHttpRequest httpRequest, final CountDownLatch latch) {
+    private AuthenticationCallback getAuthInteractiveCallback(final AuthorizationData authorizationData) {
         return new AuthenticationCallback() {
             @Override
             public void onSuccess(AuthenticationResult authenticationResult) {
                 Log.d(TAG, "Interactive authentication successful");
-                httpRequest.addHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + authenticationResult.getAccessToken());
-                latch.countDown();
+                authorizationData.setAuthenticationResult(authenticationResult);
+                authorizationData.getLatch().countDown();
             }
 
             @Override
             public void onError(MsalException e) {
                 Log.d(TAG, "Interactive authentication error");
                 if (e instanceof MsalClientException) {
-                    Log.d(TAG, "Exception inside MSAL" + e.getMessage());
+                    Log.d(TAG, "Exception inside MSAL " + e.getMessage());
                 } else if (e instanceof MsalServiceException) {
                     Log.d(TAG, "Exception when communicating with the STS, likely config issue " + e.getMessage());
                 }
                 e.printStackTrace();
-                latch.countDown();
+                authorizationData.getLatch().countDown();
             }
 
             @Override
             public void onCancel() {
                 Log.d(TAG, "User pressed cancel");
-                latch.countDown();
+                authorizationData.getLatch().countDown();
             }
         };
     }

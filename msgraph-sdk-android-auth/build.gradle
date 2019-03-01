@@ -6,7 +6,7 @@ def getVersionCode() {
 }
 
 def getVersionName() {
-    return "${mavenMajorVersion}.${mavenMinorVersion}.${mavenPatchVersion}-SNAPSHOT"
+    return "${mavenMajorVersion}.${mavenMinorVersion}.${mavenPatchVersion}${mavenSnapshotVersion}"
 }
 
 android {
