@@ -113,25 +113,13 @@ graphClient
   });
 ```
 
-## 4. Documentation
-
-For more detailed documentation, see:
-
-* [Overview](https://github.com/microsoftgraph/msgraph-sdk-java/wiki/Overview)
-* [Extending the library](https://github.com/microsoftgraph/msgraph-sdk-java/wiki/Extending-the-Library)
-* [Handling Open Types, PATCH support with `null` values](https://github.com/microsoftgraph/msgraph-sdk-java/wiki/Working-with-Open-Types)
-* [Collections](https://github.com/microsoftgraph/msgraph-sdk-java/wiki/Working-with-Collections)
-* [Making custom requests](https://github.com/microsoftgraph/msgraph-sdk-java/wiki/Custom-Requests)
-* [Known issues](https://github.com/microsoftgraph/msgraph-sdk-java/wiki/Known-Issues)
-* [Contributions](https://github.com/microsoftgraph/msgraph-sdk-java/blob/master/CONTRIBUTING.md)
-
-## 5. Issues
+## 4. Issues
 
 For known issues, see [issues](https://github.com/microsoftgraph/msgraph-sdk-android-auth/issues).
 
-## 6. Contributions
+## 5. Contributions
 
-The Microsoft Graph SDK is open for contribution. To contribute to this project, see [Contributing](https://github.com/microsoftgraph/msgraph-sdk-java/blob/master/CONTRIBUTING.md).
+The Microsoft Graph SDK is open for contribution. To contribute to this project, see [Contributing](https://github.com/microsoftgraph/msgraph-sdk-android-auth/blob/master/CONTRIBUTING.md).
 
 Thanks to everyone who has already devoted time to improving the library:
 
@@ -143,13 +131,13 @@ Thanks to everyone who has already devoted time to improving the library:
 
 This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind are welcome!
 
-## 7. Supported Java versions
+## 6. Supported Java versions
 The Microsoft Graph SDK for Java library is supported at runtime for Java 7+ and [Android API revision 21](http://source.android.com/source/build-numbers.html) and greater.
 
-## 8. License
+## 7. License
 
 Copyright (c) Microsoft Corporation. All Rights Reserved. Licensed under the [MIT license](LICENSE).
 
-## 9. Third-party notices
+## 8. Third-party notices
 
 [Third-party notices](THIRD%20PARTY%20NOTICES)
