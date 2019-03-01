@@ -14,6 +14,7 @@ import com.microsoft.identity.client.exception.MsalClientException;
 import com.microsoft.identity.client.exception.MsalException;
 import com.microsoft.identity.client.exception.MsalServiceException;
 import com.microsoft.identity.client.exception.MsalUiRequiredException;
+import com.microsoft.graph.core.ClientException;
 
 import com.microsoft.graph.http.IHttpRequest;
 
@@ -49,6 +50,7 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
     private class AuthorizationData{
         private AuthenticationResult authenticationResult;
         private CountDownLatch latch;
+        private ClientException clientException;
         public AuthorizationData(CountDownLatch latch){
             this.latch = latch;
         }
@@ -60,6 +62,12 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
         }
         public CountDownLatch getLatch(){
             return latch;
+        }
+        public void setClientException(ClientException clientException){
+            this.clientException = clientException;
+        }
+        public ClientException getClientException(){
+            return clientException;
         }
     }
 
@@ -73,7 +81,9 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
         }catch (InterruptedException e){
             e.printStackTrace();
         }
-        httpRequest.addHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + authorizationData.getAuthenticationResult().getAccessToken());
+        if(authorizationData.getAuthenticationResult()!=null)
+            httpRequest.addHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + authorizationData.getAuthenticationResult().getAccessToken());
+        else throw authorizationData.getClientException();
     }
 
     private void startAuthentication(AuthorizationData authorizationData){
@@ -115,19 +125,21 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
                 if(e instanceof MsalUiRequiredException) {
                     GetAccessTokenInteractiveAsync(authorizationData);
                 } else {
+                    String message = e.getMessage();
                     if (e instanceof MsalClientException) {
-                        Log.d(TAG, "Exception inside MSAL" + e.getMessage());
+                        message = "Exception inside MSAL" + e.getMessage();
                     } else if (e instanceof MsalServiceException) {
-                        Log.d(TAG, "Exception when communicating with the STS, likely config issue " + e.getMessage());
+                        message = "Exception when communicating with the STS, likely config issue " + e.getMessage();
                     }
-                    e.printStackTrace();
+                    authorizationData.setClientException(new ClientException(message, e));
                     authorizationData.getLatch().countDown();
                 }
             }
 
             @Override
             public void onCancel() {
-                Log.d(TAG, "User pressed cancel");
+                ClientException clientException = new ClientException("User pressed cancel", new Exception("Cancelled acquiring token silently"));
+                authorizationData.setClientException(clientException);
                 authorizationData.getLatch().countDown();
             }
         };
@@ -145,18 +157,21 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
             @Override
             public void onError(MsalException e) {
                 Log.d(TAG, "Interactive authentication error");
+                String message = e.getMessage();
                 if (e instanceof MsalClientException) {
-                    Log.d(TAG, "Exception inside MSAL " + e.getMessage());
+                    message = "Exception inside MSAL " + e.getMessage();
                 } else if (e instanceof MsalServiceException) {
-                    Log.d(TAG, "Exception when communicating with the STS, likely config issue " + e.getMessage());
+                    message = "Exception when communicating with the STS, likely config issue " + e.getMessage();
                 }
-                e.printStackTrace();
+                ClientException clientException = new ClientException(message, e);
+                authorizationData.setClientException(clientException);
                 authorizationData.getLatch().countDown();
             }
 
             @Override
             public void onCancel() {
-                Log.d(TAG, "User pressed cancel");
+                ClientException clientException = new ClientException("User pressed cancel", new Exception("Cancelled acquiring token interactively"));
+                authorizationData.setClientException(clientException);
                 authorizationData.getLatch().countDown();
             }
         };
