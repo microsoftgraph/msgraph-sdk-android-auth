@@ -30,11 +30,11 @@ dependency {
 ```
 
 #### Step 3 : Configure your app's AndroidManifest.xml to give Internet permissions
+```
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-
-#### Step 4 : Add below mentioned activity in AndroidManifest.xml and configure your Intent filter
-**make sure you add your App/Client ID at <YOUR_CLIENT_ID>**
+```
+#### Step 4 : Add BrowserTabActivity activity in AndroidManifest.xml. Make sure to put your App/Client ID at <YOUR_CLIENT_ID>.
 ```
 <!--Intent filter to capture System Browser calling back to our app after Sign In-->
 <activity
@@ -75,7 +75,7 @@ IGraphServiceClient graphClient =
     .buildClient();
 ```
 
-### 2.4 Add Auth helper in your Activity
+### 2.4 Add auth helper in your Activity
 ```
 @Override
 protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -84,19 +84,18 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 ```
 
 
-### 2.5 Make requests against the [Microsoft Graph REST API](https://developer.microsoft.com/en-us/graph/docs/concepts/overview).
+### 2.5 Make requests against the [Microsoft Graph REST API](https://developer.microsoft.com/en-us/graph/docs/concepts/overview)
 
-**Get your name:**
+**Get your name**
 ```java
 User user = graphClient
   .me()
   .buildRequest()
   .get();
-  
 System.out.println(user.displayName);
+```
   
-**To retrieve the user's drive:**
-
+**To retrieve the user's drive**
 ```java
 graphClient
   .me()
