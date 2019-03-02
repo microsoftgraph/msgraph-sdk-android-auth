@@ -107,7 +107,6 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
     }
 
     private Activity getCurrentActivity() {
-        Log.d(TAG, "Get current activity : " + this.callbacks.getActivity().getLocalClassName());
         return this.callbacks.getActivity();
     }
 
