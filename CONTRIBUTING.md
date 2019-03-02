@@ -25,7 +25,7 @@ Revisions of this nature will result in a 0.X.X change of the version number.
 
 This project follows the [all contributors](https://github.com/kentcdodds/all-contributors) specification. When making a contribution, please add yourself to the table of contributors:
 
- 1. In section 4. of the [README.md](https://github.com/microsoftgraph/msgraph-sdk-java/blob/master/README.md), after the last "|", copy and paste a new blank contributor element
+ 1. In section 4. of the README.md, after the last "|", copy and paste a new blank contributor element
     ```html
     [<img src="https://avatars.githubusercontent.com/u/<your-uid>?v=4" width="100px;"/><br />
     <sub><b>Your Name</b></sub>](your website or github page)<br />
