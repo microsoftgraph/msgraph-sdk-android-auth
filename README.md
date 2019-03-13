@@ -1,7 +1,10 @@
-# Microsoft Graph Android Authentication Library
+# Microsoft Graph Android Preview Authentication Library
 
 Use MS Graph Android Authentication library to authenticate to use [Microsoft Graph API](https://graph.microsoft.io/en-us/getting-started) in your Android application!
-Use this authentication library along with [msgraph-sdk-java](https://github.com/microsoftgraph/msgraph-sdk-java) to make requests to Microsoft Graph APIs.
+Use this authentication library along with [msgraph-sdk-java](https://github.com/microsoftgraph/msgraph-sdk-java) or [msgraph-sdk-java-core](https://github.com/microsoftgraph/msgraph-sdk-java-core) to make requests to Microsoft Graph APIs
+
+## Important Note about the Microsoft Graph Android Preview Authentication Library
+During the preview we may make changes to the API, and other mechanisms of this library, which you will be required to take along with bug fixes or feature improvements. This may impact your application. An API change may require you to update your code. When we provide the General Availability release we will require you to update to the General Availability version within six months, as applications written using a preview version of library may no longer work.
 
 ## 1. Installation
 
@@ -66,16 +69,7 @@ MSALAuthenticationProvider msalAuthenticationProvider = new MSALAuthenticationPr
     scopes);
 ```
 
-### 2.3 Create an instance of the **GraphServiceClient**
-```java
-IGraphServiceClient graphClient =
-  GraphServiceClient
-    .builder()
-    .authenticationProvider(msalAuthenticationProvider)
-    .buildClient();
-```
-
-### 2.4 Add auth helper in your Activity
+### 2.3 Add auth helper in your Activity
 ```
 @Override
 protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -83,20 +77,41 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 }
 ```
 
+### 2.4 Make requests against the [Microsoft Graph REST API](https://developer.microsoft.com/en-us/graph/docs/concepts/overview)
 
-### 2.5 Make requests against the [Microsoft Graph REST API](https://developer.microsoft.com/en-us/graph/docs/concepts/overview)
-
-**Get your name**
+#### **Get your info**
+Usage in [msgraph-sdk-java](https://github.com/microsoftgraph/msgraph-sdk-java)
 ```java
+IGraphServiceClient graphClient =
+  GraphServiceClient
+    .builder()
+    .authenticationProvider(msalAuthenticationProvider)
+    .buildClient();
+    
 User user = graphClient
   .me()
   .buildRequest()
   .get();
 System.out.println(user.displayName);
 ```
-  
-**To retrieve the user's drive**
+
+Usage in [msgraph-sdk-java-core](https://github.com/microsoftgraph/msgraph-sdk-java-core)
 ```java
+OkHttpClient graphClient = HttpClients.createDefault(msalAuthenticationProvider);
+Request request = new Request.Builder().url("https://graph.microsoft.com/v1.0/me").build();
+Response response = client.newCall(request).execute();
+System.out.println(response.body().string());
+```
+  
+#### **To retrieve the user's drive**
+Usage in [msgraph-sdk-java](https://github.com/microsoftgraph/msgraph-sdk-java)
+```java
+IGraphServiceClient graphClient =
+  GraphServiceClient
+    .builder()
+    .authenticationProvider(msalAuthenticationProvider)
+    .buildClient();
+
 graphClient
   .me()
   .drive()
@@ -109,6 +124,14 @@ graphClient
      ...
      // Handle failure case
   });
+```
+
+Usage in [msgraph-sdk-java-core](https://github.com/microsoftgraph/msgraph-sdk-java-core)
+```java
+OkHttpClient graphClient = HttpClients.createDefault(msalAuthenticationProvider);
+Request request = new Request.Builder().url("https://graph.microsoft.com/v1.0/me/drive").build();
+Response response = client.newCall(request).execute();
+System.out.println(response.body().string());
 ```
 
 ## 3. Issues

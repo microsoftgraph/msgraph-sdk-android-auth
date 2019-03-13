@@ -21,6 +21,8 @@ import com.microsoft.graph.http.IHttpRequest;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import okhttp3.Request;
+
 public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
     private final String TAG = this.getClass().getSimpleName();
     private PublicClientApplication publicClientApplication;
@@ -69,6 +71,22 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
         public ClientException getClientException(){
             return clientException;
         }
+    }
+
+    @Override
+    public Request authenticateRequest(Request request){
+        Log.d(TAG, "Authenticating request");
+        AuthorizationData authorizationData = new AuthorizationData(new CountDownLatch(1));
+        startAuthentication(authorizationData);
+        try {
+            authorizationData.getLatch().await();
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        if(authorizationData.getAuthenticationResult() != null) {
+            return request.newBuilder().addHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + authorizationData.getAuthenticationResult().getAccessToken()).build();
+        }
+        else throw authorizationData.getClientException();
     }
 
     @Override
