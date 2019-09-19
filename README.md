@@ -32,52 +32,69 @@ dependency {
 }
 ```
 
-#### Step 3 : Configure your app's AndroidManifest.xml to give Internet permissions
+#### Step 3: Create your MSAL configuration file
+
+1.  Register your application by following the steps at [Register your app with the Azure AD v2.0 endpoint](https://developer.microsoft.com/en-us/graph/docs/concepts/auth_register_app_v2).
+It's simplest to create your configuration file as a "raw" resource file in your project resources.  You'll be able to refer to this using the generated resource identifier when constructing an instance of PublicClientApplication.
+
+```javascript
+{
+  "client_id" : "<YOUR_CLIENT_ID>",
+  "redirect_uri" : "msauth://<YOUR_PACKAGE_NAME>/<YOUR_BASE64_URL_ENCODED_PACKAGE_SIGNATURE>"
+  ...
+}
+```
+
+#### Step 4 : Configure your app's AndroidManifest.xml
+
+1. Request the following permissions via the Android Manifest
 ```
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 ```
-#### Step 4 : Add BrowserTabActivity activity in AndroidManifest.xml. Make sure to put your App/Client ID at <YOUR_CLIENT_ID>.
-```
-<!--Intent filter to capture System Browser calling back to our app after Sign In-->
-<activity
-    android:name="com.microsoft.identity.client.BrowserTabActivity">
-    <intent-filter>
-    <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="msal<YOUR_CLIENT_ID>"
-            android:host="auth" />
+
+2. Configure an intent filter in the Android Manifest, using your redirect URI.
+```XML
+    <!--Intent filter to capture authorization code response from the default browser on the device calling back to our app after interactive sign in -->
+    <activity
+        android:name="com.microsoft.identity.client.BrowserTabActivity">
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data
+                android:scheme="msauth"
+                android:host="<YOUR_PACKAGE_NAME>"
+                android:host="/<YOUR_BASE64_URL_ENCODED_PACKAGE_SIGNATURE>" />
         </intent-filter>
-</activity>
+    </activity>
 ```
 
 ## 2. Getting started
 
-### 2.1 Registering your android application
-Register your application by following the steps at [Register your app with the Azure AD v2.0 endpoint](https://developer.microsoft.com/en-us/graph/docs/concepts/auth_register_app_v2).
-Once registered you will get CLIENT_ID of your application.
-
-### 2.2 Create an instance of **MSALAuthenticationProvider**
+### 2.1 Create an instance of **MSALAuthenticationProvider**
 
 ```
-PublicClientApplication publicClientApplication = new PublicClientApplication(getApplicationContext(), "CLIENT_ID_OF_YOUR_APPLICATION");
-MSALAuthenticationProvider msalAuthenticationProvider = new MSALAuthenticationProvider(
-    getActivity(),
-    getApplication(),
-    publicClientApplication,
-    scopes);
+PublicClientApplication.create(getContext(),
+    R.raw.your_json_config_file,
+    new IPublicClientApplication.ApplicationCreatedListener() {
+        @Override
+        public void onCreated(IPublicClientApplication publicClientApplication) {
+            MSALAuthenticationProvider msalAuthenticationProvider = new MSALAuthenticationProvider(
+                getActivity(),
+                getApplication(),
+                publicClientApplication,
+                scopes);
+            }
+
+        @Override
+        public void onError(MsalException exception) {
+            ...
+        }
+    });
 ```
 
-### 2.3 Add auth helper in your Activity
-```
-@Override
-protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    msalAuthenticationProvider.handleInteractiveRequestRedirect(requestCode, resultCode, data);
-}
-```
-
-### 2.4 Make requests against the [Microsoft Graph REST API](https://developer.microsoft.com/en-us/graph/docs/concepts/overview)
+### 2.2 Make requests against the [Microsoft Graph REST API](https://developer.microsoft.com/en-us/graph/docs/concepts/overview)
 
 #### **Get your info**
 Usage in [msgraph-sdk-java](https://github.com/microsoftgraph/msgraph-sdk-java)
@@ -87,7 +104,7 @@ IGraphServiceClient graphClient =
     .builder()
     .authenticationProvider(msalAuthenticationProvider)
     .buildClient();
-    
+
 User user = graphClient
   .me()
   .buildRequest()
@@ -102,7 +119,7 @@ Request request = new Request.Builder().url("https://graph.microsoft.com/v1.0/me
 Response response = client.newCall(request).execute();
 System.out.println(response.body().string());
 ```
-  
+
 #### **To retrieve the user's drive**
 Usage in [msgraph-sdk-java](https://github.com/microsoftgraph/msgraph-sdk-java)
 ```java

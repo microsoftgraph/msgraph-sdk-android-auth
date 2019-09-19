@@ -2,14 +2,18 @@ package com.microsoft.graph.authentication;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Intent;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.microsoft.graph.httpcore.ICoreAuthenticationProvider;
 import com.microsoft.identity.client.AuthenticationCallback;
-import com.microsoft.identity.client.AuthenticationResult;
 import com.microsoft.identity.client.IAccount;
-import com.microsoft.identity.client.PublicClientApplication;
+import com.microsoft.identity.client.IAuthenticationResult;
+import com.microsoft.identity.client.IMultipleAccountPublicClientApplication;
+import com.microsoft.identity.client.IPublicClientApplication;
+import com.microsoft.identity.client.ISingleAccountPublicClientApplication;
 import com.microsoft.identity.client.exception.MsalClientException;
 import com.microsoft.identity.client.exception.MsalException;
 import com.microsoft.identity.client.exception.MsalServiceException;
@@ -23,9 +27,9 @@ import java.util.concurrent.CountDownLatch;
 
 import okhttp3.Request;
 
-public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
+public class MSALAuthenticationProvider implements ICoreAuthenticationProvider, IAuthenticationProvider {
     private final String TAG = this.getClass().getSimpleName();
-    private PublicClientApplication publicClientApplication;
+    private IPublicClientApplication publicClientApplication;
     private String scopes[];
     private Application application;
     private Callback callbacks;
@@ -40,7 +44,7 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
      */
     public MSALAuthenticationProvider(@NonNull Activity activity,
                                       @NonNull Application application,
-                                      @NonNull PublicClientApplication publicClientApplication,
+                                      @NonNull IPublicClientApplication publicClientApplication,
                                       @NonNull String scopes[]) {
         this.publicClientApplication = publicClientApplication;
         this.scopes = scopes;
@@ -50,23 +54,25 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
     }
 
     private class AuthorizationData{
-        private AuthenticationResult authenticationResult;
+        private IAuthenticationResult authenticationResult;
         private CountDownLatch latch;
         private ClientException clientException;
         public AuthorizationData(CountDownLatch latch){
             this.latch = latch;
         }
-        public AuthenticationResult getAuthenticationResult(){
+        public IAuthenticationResult getAuthenticationResult(){
             return authenticationResult;
         }
-        public void setAuthenticationResult(AuthenticationResult authenticationResult){
+        public void setAuthenticationResult(IAuthenticationResult authenticationResult){
             this.authenticationResult = authenticationResult;
+            this.getLatch().countDown();
         }
         public CountDownLatch getLatch(){
             return latch;
         }
         public void setClientException(ClientException clientException){
             this.clientException = clientException;
+            this.getLatch().countDown();
         }
         public ClientException getClientException(){
             return clientException;
@@ -104,22 +110,57 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
         else throw authorizationData.getClientException();
     }
 
-    private void startAuthentication(AuthorizationData authorizationData){
-        List<IAccount> accounts = publicClientApplication.getAccounts();
-        if (accounts != null && accounts.size() > 0) {
-            IAccount firstAccount = accounts.get(0);
-            GetAccessTokenSilentAsync(authorizationData, firstAccount);
-        } else {
-            GetAccessTokenInteractiveAsync(authorizationData);
+    private void startAuthentication(final AuthorizationData authorizationData){
+        if (publicClientApplication instanceof IMultipleAccountPublicClientApplication){
+            final IMultipleAccountPublicClientApplication multipleAccountPCA = (IMultipleAccountPublicClientApplication) publicClientApplication;
+            multipleAccountPCA.getAccounts(new IPublicClientApplication.LoadAccountsCallback() {
+                @Override
+                public void onTaskCompleted(List<IAccount> accounts) {
+                    // Pick first account.
+                    if (accounts != null && accounts.size() > 0) {
+                        Log.d(TAG, "Trying to acquire token silently");
+                        multipleAccountPCA. acquireTokenSilentAsync(scopes,
+                                accounts.get(0),
+                                Constants.DEFAULT_AUTHORITY,
+                                getAuthSilentCallback(authorizationData));
+                    } else {
+                        getAccessTokenInteractiveAsync(authorizationData);
+                    }
+                }
+
+                @Override
+                public void onError(MsalException exception) {
+                    authorizationData.setClientException(getClientExceptionFromMsalException(exception));
+                }
+            });
+        } else if (publicClientApplication instanceof ISingleAccountPublicClientApplication) {
+            final ISingleAccountPublicClientApplication singleAccountPCA = (ISingleAccountPublicClientApplication) publicClientApplication;
+            singleAccountPCA.getCurrentAccountAsync(new ISingleAccountPublicClientApplication.CurrentAccountCallback() {
+                @Override
+                public void onAccountLoaded(@Nullable IAccount activeAccount) {
+                    if (activeAccount != null) {
+                        Log.d(TAG, "Trying to acquire token silently");
+                        singleAccountPCA.acquireTokenSilentAsync(scopes,
+                                Constants.DEFAULT_AUTHORITY,
+                                getAuthSilentCallback(authorizationData));
+                    } else {
+                        getAccessTokenInteractiveAsync(authorizationData);
+                    }
+                }
+
+                @Override
+                public void onAccountChanged(@Nullable IAccount priorAccount, @Nullable IAccount currentAccount) {
+                }
+
+                @Override
+                public void onError(@NonNull MsalException exception) {
+                    authorizationData.setClientException(getClientExceptionFromMsalException(exception));
+                }
+            });
         }
     }
 
-    private void GetAccessTokenSilentAsync(AuthorizationData authorizationData, IAccount firstAccount){
-        Log.d(TAG, "Trying to acquire token silently");
-        publicClientApplication.acquireTokenSilentAsync(scopes, firstAccount, getAuthSilentCallback(authorizationData));
-    }
-
-    private void GetAccessTokenInteractiveAsync(AuthorizationData authorizationData){
+    private void getAccessTokenInteractiveAsync(AuthorizationData authorizationData){
         Log.d(TAG, "Acquiring token interactively");
         publicClientApplication.acquireToken(getCurrentActivity(), scopes, getAuthInteractiveCallback(authorizationData));
     }
@@ -128,28 +169,31 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
         return this.callbacks.getActivity();
     }
 
+    private ClientException getClientExceptionFromMsalException(final MsalException e){
+        String message = e.getMessage();
+        if (e instanceof MsalClientException) {
+            message = "Exception inside MSAL" + e.getMessage();
+        } else if (e instanceof MsalServiceException) {
+            message = "Exception when communicating with the STS, likely config issue " + e.getMessage();
+        }
+        return new ClientException(message, e);
+    }
+
     private AuthenticationCallback getAuthSilentCallback(final AuthorizationData authorizationData) {
         return new AuthenticationCallback() {
             @Override
-            public void onSuccess(AuthenticationResult authenticationResult) {
+            public void onSuccess(IAuthenticationResult authenticationResult) {
                 Log.d(TAG, "Silent authentication successful");
                 authorizationData.setAuthenticationResult(authenticationResult);
-                authorizationData.getLatch().countDown();
             }
 
             @Override
             public void onError(MsalException e) {
+                Log.d(TAG, "Silent authentication error");
                 if(e instanceof MsalUiRequiredException) {
-                    GetAccessTokenInteractiveAsync(authorizationData);
+                    getAccessTokenInteractiveAsync(authorizationData);
                 } else {
-                    String message = e.getMessage();
-                    if (e instanceof MsalClientException) {
-                        message = "Exception inside MSAL" + e.getMessage();
-                    } else if (e instanceof MsalServiceException) {
-                        message = "Exception when communicating with the STS, likely config issue " + e.getMessage();
-                    }
-                    authorizationData.setClientException(new ClientException(message, e));
-                    authorizationData.getLatch().countDown();
+                    authorizationData.setClientException(getClientExceptionFromMsalException(e));
                 }
             }
 
@@ -157,7 +201,6 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
             public void onCancel() {
                 ClientException clientException = new ClientException("User pressed cancel", new Exception("Cancelled acquiring token silently"));
                 authorizationData.setClientException(clientException);
-                authorizationData.getLatch().countDown();
             }
         };
     }
@@ -165,36 +208,22 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
     private AuthenticationCallback getAuthInteractiveCallback(final AuthorizationData authorizationData) {
         return new AuthenticationCallback() {
             @Override
-            public void onSuccess(AuthenticationResult authenticationResult) {
+            public void onSuccess(IAuthenticationResult authenticationResult) {
                 Log.d(TAG, "Interactive authentication successful");
                 authorizationData.setAuthenticationResult(authenticationResult);
-                authorizationData.getLatch().countDown();
             }
 
             @Override
             public void onError(MsalException e) {
                 Log.d(TAG, "Interactive authentication error");
-                String message = e.getMessage();
-                if (e instanceof MsalClientException) {
-                    message = "Exception inside MSAL " + e.getMessage();
-                } else if (e instanceof MsalServiceException) {
-                    message = "Exception when communicating with the STS, likely config issue " + e.getMessage();
-                }
-                ClientException clientException = new ClientException(message, e);
-                authorizationData.setClientException(clientException);
-                authorizationData.getLatch().countDown();
+                authorizationData.setClientException(getClientExceptionFromMsalException(e));
             }
 
             @Override
             public void onCancel() {
                 ClientException clientException = new ClientException("User pressed cancel", new Exception("Cancelled acquiring token interactively"));
                 authorizationData.setClientException(clientException);
-                authorizationData.getLatch().countDown();
             }
         };
-    }
-
-    public void handleInteractiveRequestRedirect(int requestCode, int resultCode, Intent data) {
-        publicClientApplication.handleInteractiveRequestRedirect(requestCode, resultCode, data);
     }
 }
