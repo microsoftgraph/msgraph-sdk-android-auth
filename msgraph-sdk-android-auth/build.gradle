@@ -63,41 +63,21 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:1.10.19'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     implementation 'com.microsoft.identity.client:msal:0.2.+'
-    implementation 'com.microsoft.graph:microsoft-graph:1.1.0'
-    implementation 'com.microsoft.graph:microsoft-graph-core:0.1.0-SNAPSHOT'
-}
-
-uploadArchives {
-    def bintrayUsername = ""
-    def bintrayApikey = ""
-    if (project.rootProject.file('local.properties').exists()) {
-        Properties properties = new Properties()
-        properties.load(project.rootProject.file('local.properties').newDataInputStream())
-        bintrayUsername = properties.getProperty('bintray.user')
-        bintrayApikey = properties.getProperty('bintray.apikey')
-    }
-
-    configuration = configurations.archives
-    repositories.mavenDeployer {
-        pom {
-            setGroupId project.mavenGroupId
-            setArtifactId project.mavenArtifactId
-            setVersion getVersionName()
-        }
-        repository (url: project.mavenRepoUrl) {
-            authentication(
-                    // put these values in local file ~/.gradle/gradle.properties
-                    userName: project.hasProperty("bintrayUsername") ? project.bintrayUsername : bintrayUsername,
-                    password: project.hasProperty("bintrayApikey") ? project.bintrayApikey : bintrayApikey
-            )
-        }
-    }
+    implementation 'com.microsoft.graph:microsoft-graph:2.+'
+    implementation 'com.microsoft.graph:microsoft-graph-core:1.+'
+    api 'com.google.code.findbugs:jsr305:3+'
 }
 
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath())
     classpath += configurations.compile
+}
+
+afterEvaluate {
+    javadoc.classpath += files(android.libraryVariants.collect { variant ->
+        variant.javaCompileProvider.get().classpath.files
+    })
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
