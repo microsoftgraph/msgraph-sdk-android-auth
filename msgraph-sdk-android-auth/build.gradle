@@ -76,13 +76,11 @@ afterEvaluate {
 task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
     classifier = 'javadoc'
-    destinationDirectory = reporting.file("$project.buildDir/outputs/jar/")
 }
 
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
-    destinationDirectory = reporting.file("$project.buildDir/outputs/jar/")
 }
 
 publishing {
@@ -169,6 +167,11 @@ publishing {
             }
         }
     }
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
 }
 
 def customizePom(pom) {
