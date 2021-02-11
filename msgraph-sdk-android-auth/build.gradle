@@ -1,13 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
-
-def getVersionCode() {
-    return mavenMajorVersion.toInteger() * 10000 + mavenMinorVersion.toInteger() * 100 + mavenPatchVersion.toInteger()
-}
-
-def getVersionName() {
-    return "${mavenMajorVersion}.${mavenMinorVersion}.${mavenPatchVersion}${mavenSnapshotVersion}"
-}
+apply plugin: 'maven-publish'
 
 android {
     compileSdkVersion 27
@@ -81,17 +74,142 @@ afterEvaluate {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
     from javadoc.destinationDir
+    classifier = 'javadoc'
+    destinationDirectory = reporting.file("$project.buildDir/outputs/jar/")
 }
 
 task sourcesJar(type: Jar) {
-    classifier = 'sources'
     from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+    destinationDirectory = reporting.file("$project.buildDir/outputs/jar/")
 }
 
-artifacts {
-    archives javadocJar
-    archives sourcesJar
+publishing {
+
+    publications {
+
+        maven(MavenPublication) {
+            groupId 'com.microsoft.graph'
+            artifactId 'microsoft-graph-android-auth'
+            version "${mavenMajorVersion}.${mavenMinorVersion}.${mavenPatchVersion}${mavenArtifactSuffix}"
+
+            artifact sourcesJar
+            artifact javadocJar
+            artifact("$buildDir/outputs/aar/msgraph-sdk-android-auth-release.aar")
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', 'Microsoft Graph Auth SDK for Android')
+                root.appendNode('url', 'https://github.com/microsoftgraph/msgraph-sdk-android-auth')
+                root.children().last() + pomConfig
+                def pomFile = file("${project.buildDir}/libs/microsoft-graph-android-auth.pom")
+                writeTo(pomFile)
+            }
+
+        }
+        Snapshot(MavenPublication) {
+            customizePom(pom)
+            groupId 'com.microsoft.graph'
+            artifactId 'microsoft-graph-android-auth'
+            version "${mavenMajorVersion}.${mavenMinorVersion}.${mavenPatchVersion}${mavenCentralSnapshotArtifactSuffix}"
+
+            artifact sourcesJar
+            artifact javadocJar
+            artifact("$buildDir/outputs/aar/msgraph-sdk-android-auth-release.aar")
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+            }
+        }
+        
+        mavenCentralRelease(MavenPublication) {
+            customizePom(pom)
+            groupId 'com.microsoft.graph'
+            artifactId 'microsoft-graph-android-auth'
+            version "${mavenMajorVersion}.${mavenMinorVersion}.${mavenPatchVersion}"
+
+            artifact sourcesJar
+            artifact javadocJar
+            artifact("$buildDir/outputs/aar/msgraph-sdk-android-auth-release.aar")
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                artifact(pomAscFile) {
+                    classifier = null
+                    extension = 'pom.asc'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url = project.property('mavenCentralSnapshotUrl')
+            
+            credentials {
+                if (project.rootProject.file('local.properties').exists()) {
+                    Properties properties = new Properties()
+                    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+                    username = properties.getProperty('sonatypeUsername')
+                    password = properties.getProperty('sonatypePassword')
+                }
+            }
+        }
+        
+        maven {
+            url = project.property('mavenCentralReleaseUrl')
+            
+            credentials {
+                if (project.rootProject.file('local.properties').exists()) {
+                    Properties properties = new Properties()
+                    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+                    username = properties.getProperty('sonatypeUsername')
+                    password = properties.getProperty('sonatypePassword')
+                }
+            }
+        }
+    }
 }
 
+def customizePom(pom) {
+    pom.withXml {
+        def root = asNode()
+
+        root.dependencies.removeAll { dep ->
+            dep.scope == "test"
+        }
+
+        root.children().last() + {
+            resolveStrategy = Closure.DELEGATE_FIRST
+
+            description 'Microsoft Graph Android SDK Auth'
+            name 'Microsoft Graph Android SDK Auth'
+            url 'https://github.com/microsoftgraph/msgraph-sdk-android-auth'
+            organization {
+                name 'Microsoft'
+                url 'https://github.com/microsoftgraph/msgraph-sdk-android-auth'
+            }
+            issueManagement {
+                system 'GitHub'
+                url 'https://github.com/microsoftgraph/msgraph-sdk-android-auth/issues'
+            }
+            licenses {
+                license {
+                    name "MIT License"
+            		url "http://opensource.org/licenses/MIT"
+            		distribution "repo"
+                }
+            }
+            scm {
+                url 'https://github.com/microsoftgraph/msgraph-sdk-android-auth'
+            	connection 'scm:git:git://github.com/microsoftgraph/msgraph-sdk-android-auth.git'
+            	developerConnection 'scm:git:ssh://git@github.com:microsoftgraph/msgraph-sdk-android-auth.git'
+            }
+            developers {
+                developer {
+                    name 'Microsoft'
+                }
+            }
+        }
+    }
+}
