@@ -11,21 +11,20 @@ During the preview we may make changes to the API, and other mechanisms of this 
 ### 1.1 Install via Gradle
 
 #### Step 1 : Add this repository in project level `build.gradle`
-```
+
+```Groovy
 allprojects {
     repositories {
         google()
-        jcenter()
-        jcenter{
-            url 'http://oss.jfrog.org/oss-snapshot-local'
-        }
+        mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     }
 }
 ```
 
 #### Step 2 : Add dependency for `microsoft-graph-android-auth` to your app's `build.gradle`:
 
-```gradle
+```Groovy
 dependency {
     // Include the auth library as a dependency in app level build.gradle
     implementation 'com.microsoft.graph:microsoft-graph-android-auth:0.1.0-SNAPSHOT'

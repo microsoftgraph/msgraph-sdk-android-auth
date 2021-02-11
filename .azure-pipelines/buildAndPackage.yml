@@ -1,0 +1,35 @@
+#Copyright (c) Microsoft Corporation. All rights reserved.
+#Licensed under the MIT License.
+#Building and packaging the artifacts of the Java-Auth libraries using the build.gradle file.
+#Ready the package for deployment and release. 
+
+trigger:
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - msgraph-sdk-android-auth/*
+    exclude:
+      - .gradle/wrapper
+      - .gitignore
+      - CONTRIBUTING.md
+      - LICENSE
+      - THIRD PARTY NOTICES
+      - gradlew
+      - gradlew.bat
+      - readme.md
+      - scripts/*
+
+pr: none
+
+pool:
+  vmImage: windows-latest
+
+steps:
+- template: templates/checkout-and-credscan.yml
+- template: templates/install-java.yml
+- template: templates/secure-files.yml
+- template: templates/build.yml
+- template: templates/publish-artefacts.yml
+- template: templates/alert-failure.yml

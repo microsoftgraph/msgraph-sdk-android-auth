@@ -3,7 +3,7 @@ package com.microsoft.graph.authentication;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
-import android.support.annotation.NonNull;
+import javax.annotation.Nonnull;
 import android.util.Log;
 
 import com.microsoft.identity.client.AuthenticationCallback;
@@ -38,10 +38,10 @@ public class MSALAuthenticationProvider implements IMSALAuthenticationProvider {
      * @param publicClientApplication The PublicClientApplication instance
      * @param scopes                  Scopes to access the protected resource
      */
-    public MSALAuthenticationProvider(@NonNull Activity activity,
-                                      @NonNull Application application,
-                                      @NonNull PublicClientApplication publicClientApplication,
-                                      @NonNull String scopes[]) {
+    public MSALAuthenticationProvider(@Nonnull Activity activity,
+                                      @Nonnull Application application,
+                                      @Nonnull PublicClientApplication publicClientApplication,
+                                      @Nonnull String scopes[]) {
         this.publicClientApplication = publicClientApplication;
         this.scopes = scopes;
         this.application = application;

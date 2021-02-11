@@ -1,0 +1,31 @@
+#Copyright (c) Microsoft Corporation. All rights reserved.
+#Licensed under the MIT License.
+#Build and test Java Core to make sure a valid pull request is being made
+#Validate that the versions dont conflict with those online in case a pull request is made to main or master
+
+pr:
+  branches:
+    include:
+      - dev
+  paths:
+    exclude:
+      - .gradle/wrapper
+      - .gitignore
+      - CONTRIBUTING.md
+      - LICENSE
+      - THIRD PARTY NOTICES
+      - gradlew
+      - gradlew.bat
+      - readme.md
+      - scripts/*
+
+trigger: none
+
+pool:
+  vmImage: windows-latest
+
+steps:
+- template: templates/checkout-and-credscan.yml
+- template: templates/install-java.yml
+- template: templates/build.yml
+- template: templates/alert-failure.yml

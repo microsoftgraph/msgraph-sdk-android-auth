@@ -4,10 +4,13 @@ buildscript {
     
     repositories {
         google()
-        jcenter()
+        gradlePluginPortal()
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.4'
+        classpath 'com.android.tools.build:gradle:4.1.2'
         
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -18,10 +21,8 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
-        jcenter{
-            url 'http://oss.jfrog.org/oss-snapshot-local'
-        }
+        gradlePluginPortal()
+        mavenCentral()
     }
 }
 
