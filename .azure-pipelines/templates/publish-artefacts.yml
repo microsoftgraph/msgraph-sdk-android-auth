@@ -4,6 +4,7 @@ steps:
     SourceFolder: '$(System.DefaultWorkingDirectory)'
     Contents: |
       **/libs/*
+      **/outputs/**/*.aar
       build.gradle
       gradlew
       gradlew.bat
