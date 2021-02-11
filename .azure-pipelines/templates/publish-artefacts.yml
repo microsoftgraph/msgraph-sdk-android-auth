@@ -3,7 +3,7 @@ steps:
   inputs:
     SourceFolder: '$(System.DefaultWorkingDirectory)'
     Contents: |
-      **/libs/*
+      **/libs/*.jar
       **/outputs/**/*.aar
       **/build.gradle
       gradlew
