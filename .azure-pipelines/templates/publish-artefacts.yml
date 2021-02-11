@@ -5,7 +5,7 @@ steps:
     Contents: |
       **/libs/*
       **/outputs/**/*.aar
-      build.gradle
+      **/build.gradle
       gradlew
       gradlew.bat
       settings.gradle
